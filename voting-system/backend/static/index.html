@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VoteSecure – Online Voting System</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#2563eb;--primary-dark:#1d4ed8;--primary-light:#dbeafe;
+  --success:#16a34a;--danger:#dc2626;
+  --bg:#f1f5f9;--card:#fff;--text:#1e293b;--muted:#64748b;
+  --border:#e2e8f0;--radius:12px;--shadow:0 4px 24px rgba(0,0,0,.08);
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+/* Navbar */
+.navbar{display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:64px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.08);position:sticky;top:0;z-index:100}
+.brand{display:flex;align-items:center;gap:.5rem;font-size:1.3rem;font-weight:800;color:var(--primary)}
+.nav-links{display:flex;gap:.5rem}
+.nav-btn{padding:.4rem 1rem;border-radius:8px;font-weight:600;color:var(--muted);border:none;background:transparent;font-size:.95rem;cursor:pointer;transition:all .2s}
+.nav-btn:hover,.nav-btn.active{color:var(--primary);background:var(--primary-light)}
+.user-info{display:flex;align-items:center;gap:1rem}
+.admin-tag{background:var(--primary);color:#fff;font-size:.7rem;padding:.15rem .5rem;border-radius:999px;font-weight:700}
+/* Btns */
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.6rem 1.4rem;border-radius:8px;border:none;font-size:.95rem;font-weight:600;transition:all .2s;cursor:pointer;font-family:inherit}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#b91c1c}
+.btn-outline{background:transparent;border:2px solid var(--primary);color:var(--primary)}.btn-outline:hover{background:var(--primary-light)}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.btn-full{width:100%;justify-content:center;padding:.75rem;font-size:1rem;margin-top:.5rem}
+.btn-sm{padding:.4rem 1rem;font-size:.85rem}
+.btn-xs{padding:.3rem .7rem;font-size:.78rem;border-radius:6px;border:none;cursor:pointer}
+/* Card */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.5rem}
+/* Forms */
+.fg{margin-bottom:1.2rem}
+.fg label{display:block;font-weight:600;margin-bottom:.4rem;font-size:.9rem}
+.fg input,.fg textarea,.fg select{width:100%;padding:.65rem 1rem;border:1.5px solid var(--border);border-radius:8px;font-size:1rem;transition:border-color .2s;background:#fff;font-family:inherit}
+.fg input:focus,.fg textarea:focus{outline:none;border-color:var(--primary)}
+/* Alerts */
+.alert{padding:.8rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:.9rem}
+.alert-error{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+.alert-success{background:#dcfce7;color:#166534;border:1px solid #86efac}
+.alert-info{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd}
+/* Badge */
+.badge{display:inline-block;padding:.2rem .7rem;border-radius:999px;font-size:.78rem;font-weight:700}
+.badge-green{background:#dcfce7;color:#166534}.badge-red{background:#fee2e2;color:#991b1b}.badge-blue{background:#dbeafe;color:#1e40af}
+/* Spinner */
+.spinner-wrap{display:flex;justify-content:center;padding:3rem}
+.spinner{width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Auth */
+.auth-page{min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:2rem 1rem;background:linear-gradient(135deg,#eff6ff,#f1f5f9)}
+.auth-card{width:100%;max-width:440px}
+.auth-hdr{text-align:center;margin-bottom:2rem}
+.auth-icon{font-size:3rem;display:block;margin-bottom:.75rem}
+.auth-hdr h1{font-size:1.75rem;font-weight:800;margin-bottom:.4rem}
+.auth-hdr p{color:var(--muted);font-size:.95rem}
+.auth-footer{text-align:center;margin-top:1.5rem;color:var(--muted);font-size:.9rem}
+.auth-footer a{cursor:pointer;color:var(--primary)}
+/* Page */
+.page{padding:2rem 1.5rem;max-width:900px;margin:0 auto}
+.page-title{font-size:2rem;font-weight:800;margin-bottom:1rem}
+/* Candidates */
+.cands-list{display:flex;flex-direction:column;gap:1rem}
+.cand-card{display:flex;align-items:center;gap:1.25rem;cursor:pointer;border:2px solid var(--border);transition:all .2s;padding:1.25rem 1.5rem}
+.cand-card:hover{border-color:var(--primary);box-shadow:0 4px 20px rgba(37,99,235,.12)}
+.cand-card.selected{border-color:var(--primary);background:var(--primary-light)}
+.av{width:60px;height:60px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover}
+.av-sm{width:44px;height:44px;font-size:1.1rem}
+.av-lg{width:72px;height:72px;font-size:1.8rem}
+.ci{flex:1}.ci h3{font-size:1.15rem;font-weight:700;margin-bottom:.3rem}
+.ci-desc{color:var(--muted);font-size:.88rem;margin-top:.4rem;line-height:1.5}
+.radio{width:22px;height:22px;border-radius:50%;border:2.5px solid var(--border);transition:all .2s;position:relative;flex-shrink:0}
+.radio.checked{border-color:var(--primary);background:var(--primary)}
+.radio.checked::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;background:#fff}
+/* Results */
+.winner-card{display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:2px solid var(--primary);position:relative;overflow:hidden}
+.winner-crown{font-size:2.5rem;position:absolute;top:.5rem;right:1rem;opacity:.3}
+.winner-label{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--primary);margin-bottom:.3rem}
+.winner-info h2{font-size:1.5rem;font-weight:800;margin-bottom:.4rem}
+.winner-stats{margin-top:.5rem;font-size:.95rem;color:var(--muted);display:flex;gap:.5rem}
+.total-badge{display:inline-block;background:var(--primary-light);color:var(--primary);padding:.4rem 1rem;border-radius:999px;font-size:.9rem;margin-bottom:1.5rem}
+.results-list{display:flex;flex-direction:column;gap:.75rem}
+.result-row{display:flex;align-items:center;gap:1rem;padding:1rem 1.25rem}
+.result-rank{width:32px;height:32px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;flex-shrink:0}
+.rinfo{flex:1}.rname{font-weight:700}.rparty{font-size:.82rem;color:var(--muted);margin-bottom:.4rem}
+.rbar-wrap{height:8px;background:var(--bg);border-radius:999px;overflow:hidden}
+.rbar{height:100%;border-radius:999px;transition:width .8s ease}
+.rstats{text-align:right;flex-shrink:0}.rcount{font-size:1.2rem;font-weight:800}.rpct{font-size:.82rem;color:var(--muted)}
+/* Bar chart */
+.chart-section{margin-bottom:1.5rem}
+.chart-section h3{font-weight:700;margin-bottom:1rem}
+.bar-chart{display:flex;align-items:flex-end;gap:12px;height:200px;padding:0 8px}
+.bar-col{display:flex;flex-direction:column;align-items:center;flex:1;height:100%;justify-content:flex-end;gap:6px}
+.bar-col-label{font-size:.75rem;font-weight:600;color:var(--muted);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px}
+.bar-col-val{font-size:.85rem;font-weight:800;color:var(--text)}
+.bar-fill{width:100%;border-radius:6px 6px 0 0;min-height:4px;transition:height .8s ease}
+/* Admin */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.stat-card{text-align:center;padding:1.25rem}
+.stat-value{font-size:2rem;font-weight:800;color:var(--primary)}
+.stat-label{font-size:.82rem;color:var(--muted);margin-top:.25rem}
+.el-ctrl{margin-bottom:1.5rem}
+.el-ctrl h3{font-size:1.05rem;font-weight:700;margin-bottom:1rem}
+.ctrl-row{display:flex;gap:2rem;flex-wrap:wrap}
+.tgl-label{display:flex;align-items:center;gap:.75rem;font-weight:600}
+.tgl-btn{padding:.4rem 1rem;border-radius:8px;border:none;font-weight:700;font-size:.9rem;cursor:pointer}
+.tgl-on{background:#dcfce7;color:#166534}.tgl-off{background:#fee2e2;color:#991b1b}
+.atabs{display:flex;gap:.5rem;margin-bottom:1.25rem;border-bottom:2px solid var(--border)}
+.tab-btn{padding:.6rem 1.5rem;border:none;background:transparent;font-weight:600;font-size:.95rem;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;font-family:inherit}
+.tab-btn.active{color:var(--primary);border-bottom-color:var(--primary)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:.6rem .75rem;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:2px solid var(--border)}
+td{padding:.75rem;border-bottom:1px solid var(--border);font-size:.92rem;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.tc{display:flex;align-items:center;gap:.6rem;font-weight:600}
+.abtns{display:flex;gap:.4rem;flex-wrap:wrap}
+.empty-msg{color:var(--muted);padding:1rem 0}
+@media(max-width:700px){.stats-row{grid-template-columns:repeat(2,1fr)}.form-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="root"><div style="display:flex;justify-content:center;padding:3rem"><div style="width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite"></div></div></div>
+
+<script>
+// ── Mini React-like state manager ────────────────────────────────────────────
+// We use plain DOM manipulation for reliability without needing Babel/CDN React
+// Actually let's use React from CDN but with createElement (no JSX)
+</script>
+
+<!-- Load React via CDN (no JSX needed, we use createElement) -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+<script>
+const { createElement: h, useState, useEffect, useContext, createContext, useCallback, Fragment } = React;
+
+// ── API ──────────────────────────────────────────────────────────────────────
+async function apiFetch(path, opts = {}) {
+  const token = localStorage.getItem('vs_token');
+  const res = await fetch('/api' + path, {
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+    ...opts,
+  });
+  if (res.status === 401) {
+    localStorage.removeItem('vs_token'); localStorage.removeItem('vs_user');
+    setHash('/login'); return;
+  }
+  const data = await res.json();
+  if (!res.ok) { const e = new Error(data.error || 'Error'); e.data = data; throw e; }
+  return data;
+}
+const api = {
+  get: p => apiFetch(p),
+  post: (p, b) => apiFetch(p, { method: 'POST', body: JSON.stringify(b) }),
+  put: (p, b) => apiFetch(p, { method: 'PUT', body: JSON.stringify(b) }),
+  del: p => apiFetch(p, { method: 'DELETE' }),
+};
+
+function setHash(path) { window.location.hash = '#' + path; }
+
+// ── Auth Context ─────────────────────────────────────────────────────────────
+const AuthCtx = createContext(null);
+function AuthProvider({ children }) {
+  const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem('vs_user')); } catch { return null; } });
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (localStorage.getItem('vs_token')) {
+      api.get('/auth/me').then(d => { setUser(d.user); localStorage.setItem('vs_user', JSON.stringify(d.user)); })
+        .catch(() => { localStorage.removeItem('vs_token'); localStorage.removeItem('vs_user'); setUser(null); })
+        .finally(() => setLoading(false));
+    } else setLoading(false);
+  }, []);
+  const login = async (email, password) => {
+    const d = await api.post('/auth/login', { email, password });
+    localStorage.setItem('vs_token', d.token); localStorage.setItem('vs_user', JSON.stringify(d.user)); setUser(d.user); return d.user;
+  };
+  const register = async (username, email, password) => {
+    const d = await api.post('/auth/register', { username, email, password });
+    localStorage.setItem('vs_token', d.token); localStorage.setItem('vs_user', JSON.stringify(d.user)); setUser(d.user); return d.user;
+  };
+  const logout = () => { localStorage.removeItem('vs_token'); localStorage.removeItem('vs_user'); setUser(null); };
+  return h(AuthCtx.Provider, { value: { user, loading, login, register, logout } }, children);
+}
+const useAuth = () => useContext(AuthCtx);
+
+// ── Router ───────────────────────────────────────────────────────────────────
+function useHash() {
+  const [hash, setHashState] = useState(window.location.hash.replace('#', '') || '/');
+  useEffect(() => {
+    const h2 = () => setHashState(window.location.hash.replace('#', '') || '/');
+    window.addEventListener('hashchange', h2);
+    return () => window.removeEventListener('hashchange', h2);
+  }, []);
+  return hash;
+}
+
+// ── UI Helpers ───────────────────────────────────────────────────────────────
+const Spinner = () => h('div', { className: 'spinner-wrap' }, h('div', { className: 'spinner' }));
+
+function Alert({ type, msg }) {
+  if (!msg) return null;
+  return h('div', { className: 'alert alert-' + type }, msg);
+}
+
+function Avatar({ name, imageUrl, size }) {
+  const cls = 'av' + (size === 'sm' ? ' av-sm' : size === 'lg' ? ' av-lg' : '');
+  return h('div', { className: cls }, imageUrl ? h('img', { src: imageUrl, alt: name }) : (name || '?').charAt(0).toUpperCase());
+}
+
+// ── Navbar ───────────────────────────────────────────────────────────────────
+function Navbar() {
+  const { user, logout } = useAuth();
+  const path = useHash();
+  const handleLogout = () => { logout(); setHash('/login'); };
+  return h('nav', { className: 'navbar' },
+    h('div', { className: 'brand' }, h('span', null, '🗳️'), h('span', null, 'VoteSecure')),
+    user && h('div', { className: 'nav-links' },
+      !user.is_admin && h(Fragment, null,
+        h('button', { className: 'nav-btn' + (path === '/vote' ? ' active' : ''), onClick: () => setHash('/vote') }, 'Vote'),
+        h('button', { className: 'nav-btn' + (path === '/results' ? ' active' : ''), onClick: () => setHash('/results') }, 'Results')
+      ),
+      user.is_admin && h('button', { className: 'nav-btn' + (path === '/admin' ? ' active' : ''), onClick: () => setHash('/admin') }, 'Admin Panel')
+    ),
+    h('div', null,
+      user
+        ? h('div', { className: 'user-info' },
+            h('span', null, user.is_admin && h('span', { className: 'admin-tag' }, 'Admin'), ' ', user.username),
+            h('button', { className: 'btn btn-outline btn-sm', onClick: handleLogout }, 'Logout'))
+        : h('div', { style: { display: 'flex', gap: '.75rem', alignItems: 'center' } },
+            h('button', { className: 'nav-btn' + (path === '/login' ? ' active' : ''), onClick: () => setHash('/login') }, 'Login'),
+            h('button', { className: 'btn btn-primary btn-sm', onClick: () => setHash('/register') }, 'Register'))
+    )
+  );
+}
+
+// ── Login Page ───────────────────────────────────────────────────────────────
+function LoginPage() {
+  const { login } = useAuth();
+  const [form, setForm] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const ch = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  const submit = async e => {
+    e.preventDefault(); setError(''); setLoading(true);
+    try { const u = await login(form.email, form.password); setHash(u.is_admin ? '/admin' : '/vote'); }
+    catch (err) { setError(err.data?.error || 'Login failed'); }
+    finally { setLoading(false); }
+  };
+  return h('div', { className: 'auth-page' },
+    h('div', { className: 'auth-card card' },
+      h('div', { className: 'auth-hdr' },
+        h('span', { className: 'auth-icon' }, '🗳️'),
+        h('h1', null, 'Welcome Back'),
+        h('p', null, 'Sign in to cast your vote')
+      ),
+      h(Alert, { type: 'error', msg: error }),
+      h('form', { onSubmit: submit },
+        h('div', { className: 'fg' }, h('label', null, 'Email'), h('input', { type: 'email', name: 'email', value: form.email, onChange: ch, placeholder: 'you@example.com', required: true, autoFocus: true })),
+        h('div', { className: 'fg' }, h('label', null, 'Password'), h('input', { type: 'password', name: 'password', value: form.password, onChange: ch, placeholder: '••••••••', required: true })),
+        h('button', { type: 'submit', className: 'btn btn-primary btn-full', disabled: loading }, loading ? 'Signing in…' : 'Sign In')
+      ),
+      h('p', { className: 'auth-footer' }, "Don't have an account? ", h('a', { onClick: () => setHash('/register') }, 'Register here')),
+      h('div', { style: { marginTop: '1rem', padding: '.75rem 1rem', background: '#f0fdf4', borderRadius: '8px', fontSize: '.85rem', color: '#166534', border: '1px solid #86efac' } },
+        '🔑 Admin: ', h('strong', null, 'admin@voting.com'), ' / ', h('strong', null, 'Admin@1234'))
+    )
+  );
+}
+
+// ── Register Page ─────────────────────────────────────────────────────────────
+function RegisterPage() {
+  const { register } = useAuth();
+  const [form, setForm] = useState({ username: '', email: '', password: '', confirm: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const ch = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  const submit = async e => {
+    e.preventDefault(); setError('');
+    if (form.password !== form.confirm) { setError('Passwords do not match'); return; }
+    if (form.password.length < 6) { setError('Password must be at least 6 characters'); return; }
+    setLoading(true);
+    try { await register(form.username, form.email, form.password); setHash('/vote'); }
+    catch (err) { setError(err.data?.error || 'Registration failed'); }
+    finally { setLoading(false); }
+  };
+  return h('div', { className: 'auth-page' },
+    h('div', { className: 'auth-card card' },
+      h('div', { className: 'auth-hdr' },
+        h('span', { className: 'auth-icon' }, '📝'),
+        h('h1', null, 'Create Account'),
+        h('p', null, 'Register to participate in the election')
+      ),
+      h(Alert, { type: 'error', msg: error }),
+      h('form', { onSubmit: submit },
+        h('div', { className: 'fg' }, h('label', null, 'Username'), h('input', { type: 'text', name: 'username', value: form.username, onChange: ch, placeholder: 'johndoe', required: true, autoFocus: true })),
+        h('div', { className: 'fg' }, h('label', null, 'Email'), h('input', { type: 'email', name: 'email', value: form.email, onChange: ch, placeholder: 'you@example.com', required: true })),
+        h('div', { className: 'fg' }, h('label', null, 'Password'), h('input', { type: 'password', name: 'password', value: form.password, onChange: ch, placeholder: 'Min. 6 characters', required: true })),
+        h('div', { className: 'fg' }, h('label', null, 'Confirm Password'), h('input', { type: 'password', name: 'confirm', value: form.confirm, onChange: ch, placeholder: 'Repeat password', required: true })),
+        h('button', { type: 'submit', className: 'btn btn-primary btn-full', disabled: loading }, loading ? 'Creating…' : 'Create Account')
+      ),
+      h('p', { className: 'auth-footer' }, 'Have an account? ', h('a', { onClick: () => setHash('/login') }, 'Sign in'))
+    )
+  );
+}
+
+// ── Vote Page ─────────────────────────────────────────────────────────────────
+function VotePage() {
+  const { user } = useAuth();
+  const [candidates, setCandidates] = useState([]);
+  const [election, setElection] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    Promise.all([api.get('/candidates/'), api.get('/votes/status')])
+      .then(([c, s]) => { setCandidates(c.candidates); setElection(s.election); })
+      .catch(() => setError('Failed to load data'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const castVote = async () => {
+    if (!selected) return;
+    setSubmitting(true); setError('');
+    try {
+      await api.post('/votes/cast', { candidate_id: selected });
+      setSuccess('✅ Your vote has been cast successfully!');
+      setTimeout(() => setHash('/results'), 2000);
+    } catch (err) { setError(err.data?.error || 'Failed to cast vote'); }
+    finally { setSubmitting(false); }
+  };
+
+  if (loading) return h(Spinner);
+  const closed = election && !election.is_open;
+  const voted = user?.has_voted;
+
+  return h('div', { className: 'page' },
+    h('h1', { className: 'page-title' }, '🗳️ ' + (election?.title || 'General Election')),
+    closed && h(Alert, { type: 'info', msg: 'Voting is currently closed.' }),
+    voted && !success && h('div', { className: 'alert alert-success' }, 'You have already voted. ', h('a', { onClick: () => setHash('/results'), style: { cursor: 'pointer' } }, 'View results →')),
+    success && h(Alert, { type: 'success', msg: success }),
+    error && h(Alert, { type: 'error', msg: error }),
+    !voted && !closed && h(Fragment, null,
+      h('p', { style: { color: 'var(--muted)', marginBottom: '1.5rem' } }, 'Select a candidate and submit your vote. You can only vote once.'),
+      h('div', { className: 'cands-list' },
+        candidates.length === 0
+          ? h('p', { style: { color: 'var(--muted)', padding: '2rem', textAlign: 'center' } }, 'No candidates available yet.')
+          : candidates.map(c =>
+              h('div', { key: c.id, className: 'cand-card card' + (selected === c.id ? ' selected' : ''), onClick: () => setSelected(c.id) },
+                h(Avatar, { name: c.name, imageUrl: c.image_url }),
+                h('div', { className: 'ci' },
+                  h('h3', null, c.name),
+                  h('span', { className: 'badge badge-blue' }, c.party),
+                  c.description && h('p', { className: 'ci-desc' }, c.description)
+                ),
+                h('div', { className: 'radio' + (selected === c.id ? ' checked' : '') })
+              )
+            )
+      ),
+      candidates.length > 0 && h('div', { style: { marginTop: '2rem', display: 'flex', justifyContent: 'center' } },
+        h('button', { className: 'btn btn-primary', style: { padding: '.85rem 3rem', fontSize: '1.1rem' }, onClick: castVote, disabled: !selected || submitting },
+          submitting ? 'Submitting…' : '🗳️ Submit Vote')
+      )
+    )
+  );
+}
+
+// ── Results Page ──────────────────────────────────────────────────────────────
+const COLORS = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#0891b2'];
+function ResultsPage() {
+  const [results, setResults] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [election, setElection] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    api.get('/votes/results')
+      .then(d => { setResults(d.results); setTotal(d.total_votes); setElection(d.election); })
+      .catch(err => setError(err.data?.error || 'Results not available yet'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return h(Spinner);
+  if (error) return h('div', { className: 'page' }, h(Alert, { type: 'info', msg: '🔒 ' + error }));
+
+  const winner = results[0];
+  const maxVotes = results.length > 0 ? Math.max(...results.map(r => r.vote_count), 1) : 1;
+
+  return h('div', { className: 'page' },
+    h('h1', { className: 'page-title' }, '📊 Election Results'),
+    h('p', { style: { color: 'var(--muted)', marginBottom: '.75rem' } }, election?.title || 'General Election'),
+    h('div', { className: 'total-badge' }, 'Total Votes Cast: ', h('strong', null, total)),
+
+    results.length === 0 ? h('p', { style: { color: 'var(--muted)', padding: '2rem', textAlign: 'center' } }, 'No votes cast yet.') :
+    h(Fragment, null,
+      winner && h('div', { className: 'winner-card card' },
+        h('div', { className: 'winner-crown' }, '👑'),
+        h(Avatar, { name: winner.name, imageUrl: winner.image_url, size: 'lg' }),
+        h('div', null,
+          h('div', { className: 'winner-label' }, 'Leading Candidate'),
+          h('h2', null, winner.name),
+          h('span', { className: 'badge badge-blue' }, winner.party),
+          h('div', { className: 'winner-stats' }, winner.vote_count + ' votes', h('span', null, '·'), winner.percentage + '%')
+        )
+      ),
+
+      // Bar chart (pure CSS/HTML)
+      h('div', { className: 'chart-section card' },
+        h('h3', null, 'Vote Distribution'),
+        h('div', { className: 'bar-chart' },
+          results.map((c, i) =>
+            h('div', { key: c.id, className: 'bar-col' },
+              h('div', { className: 'bar-col-val' }, c.vote_count),
+              h('div', { className: 'bar-fill', style: { background: COLORS[i % COLORS.length], height: Math.max(4, (c.vote_count / maxVotes) * 160) + 'px' } }),
+              h('div', { className: 'bar-col-label' }, c.name)
+            )
+          )
+        )
+      ),
+
+      h('div', { className: 'results-list' },
+        results.map((c, i) =>
+          h('div', { key: c.id, className: 'result-row card' },
+            h('div', { className: 'result-rank' }, i + 1),
+            h(Avatar, { name: c.name, imageUrl: c.image_url, size: 'sm' }),
+            h('div', { className: 'rinfo' },
+              h('div', { className: 'rname' }, c.name),
+              h('div', { className: 'rparty' }, c.party),
+              h('div', { className: 'rbar-wrap' },
+                h('div', { className: 'rbar', style: { width: c.percentage + '%', background: COLORS[i % COLORS.length] } })
+              )
+            ),
+            h('div', { className: 'rstats' },
+              h('div', { className: 'rcount' }, c.vote_count),
+              h('div', { className: 'rpct' }, c.percentage + '%')
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ── Admin Page ────────────────────────────────────────────────────────────────
+const EMPTY_FORM = { name: '', party: '', description: '', image_url: '' };
+function AdminPage() {
+  const [tab, setTab] = useState('candidates');
+  const [candidates, setCandidates] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [election, setElection] = useState(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [editId, setEditId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [c, u, s, e] = await Promise.all([api.get('/admin/candidates'), api.get('/admin/users'), api.get('/admin/stats'), api.get('/admin/election')]);
+      setCandidates(c.candidates); setUsers(u.users); setStats(s); setElection(e.election);
+    } catch { setError('Failed to load admin data'); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const ch = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+
+  const submit = async e => {
+    e.preventDefault(); setError(''); setSuccess(''); setSaving(true);
+    try {
+      if (editId) { await api.put('/admin/candidates/' + editId, form); setSuccess('Candidate updated'); }
+      else { await api.post('/admin/candidates', form); setSuccess('Candidate added'); }
+      setForm(EMPTY_FORM); setEditId(null); fetchAll();
+    } catch (err) { setError(err.data?.error || 'Failed to save'); }
+    finally { setSaving(false); }
+  };
+
+  const startEdit = c => { setEditId(c.id); setForm({ name: c.name, party: c.party, description: c.description || '', image_url: c.image_url || '' }); setTab('candidates'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const delCand = async id => {
+    if (!window.confirm('Delete this candidate?')) return;
+    try { await api.del('/admin/candidates/' + id); setSuccess('Deleted'); fetchAll(); }
+    catch { setError('Failed to delete'); }
+  };
+  const toggleActive = async c => { try { await api.put('/admin/candidates/' + c.id, { ...c, is_active: !c.is_active }); fetchAll(); } catch { setError('Update failed'); } };
+  const updElection = async (field, value) => { try { await api.put('/admin/election', { [field]: value }); setElection(prev => ({ ...prev, [field]: value })); setSuccess('Election updated'); } catch { setError('Update failed'); } };
+
+  if (loading) return h(Spinner);
+
+  return h('div', { className: 'page', style: { maxWidth: '1100px' } },
+    h('h1', { className: 'page-title' }, '⚙️ Admin Panel'),
+
+    stats && h('div', { className: 'stats-row' },
+      [['total_users', 'Registered Voters'], ['total_votes', 'Votes Cast'], ['total_candidates', 'Candidates'], ['turnout', 'Turnout']].map(([k, l]) =>
+        h('div', { key: k, className: 'stat-card card' },
+          h('div', { className: 'stat-value' }, k === 'turnout' ? stats[k] + '%' : stats[k]),
+          h('div', { className: 'stat-label' }, l)
+        )
+      )
+    ),
+
+    h(Alert, { type: 'error', msg: error }),
+    h(Alert, { type: 'success', msg: success }),
+
+    election && h('div', { className: 'el-ctrl card' },
+      h('h3', null, '🗳️ Election Controls — ', h('em', null, election.title)),
+      h('div', { className: 'ctrl-row' },
+        h('label', { className: 'tgl-label' }, 'Voting ',
+          h('button', { className: 'tgl-btn ' + (election.is_open ? 'tgl-on' : 'tgl-off'), onClick: () => updElection('is_open', !election.is_open) },
+            election.is_open ? '✅ Open' : '🔒 Closed')),
+        h('label', { className: 'tgl-label' }, 'Results ',
+          h('button', { className: 'tgl-btn ' + (election.results_visible ? 'tgl-on' : 'tgl-off'), onClick: () => updElection('results_visible', !election.results_visible) },
+            election.results_visible ? '👁️ Visible' : '🙈 Hidden'))
+      )
+    ),
+
+    h('div', { className: 'atabs' },
+      h('button', { className: 'tab-btn' + (tab === 'candidates' ? ' active' : ''), onClick: () => setTab('candidates') }, 'Candidates'),
+      h('button', { className: 'tab-btn' + (tab === 'users' ? ' active' : ''), onClick: () => setTab('users') }, 'Voters (' + users.length + ')')
+    ),
+
+    tab === 'candidates' && h(Fragment, null,
+      // Form
+      h('div', { className: 'card', style: { marginBottom: '1.5rem' } },
+        h('h3', { style: { fontWeight: 700, marginBottom: '1rem' } }, editId ? '✏️ Edit Candidate' : '➕ Add Candidate'),
+        h('form', { onSubmit: submit },
+          h('div', { className: 'form-row' },
+            h('div', { className: 'fg' }, h('label', null, 'Full Name *'), h('input', { name: 'name', value: form.name, onChange: ch, placeholder: 'Candidate name', required: true })),
+            h('div', { className: 'fg' }, h('label', null, 'Party *'), h('input', { name: 'party', value: form.party, onChange: ch, placeholder: 'Party name', required: true }))
+          ),
+          h('div', { className: 'fg' }, h('label', null, 'Description'), h('textarea', { name: 'description', value: form.description, onChange: ch, placeholder: 'Brief bio...', rows: 3 })),
+          h('div', { className: 'fg' }, h('label', null, 'Photo URL'), h('input', { name: 'image_url', value: form.image_url, onChange: ch, placeholder: 'https://...' })),
+          h('div', { style: { display: 'flex', gap: '.75rem' } },
+            h('button', { type: 'submit', className: 'btn btn-primary', disabled: saving }, saving ? 'Saving…' : editId ? 'Update' : 'Add Candidate'),
+            editId && h('button', { type: 'button', className: 'btn btn-outline', onClick: () => { setEditId(null); setForm(EMPTY_FORM); } }, 'Cancel')
+          )
+        )
+      ),
+      // Table
+      h('div', { className: 'card' },
+        h('h3', { style: { fontWeight: 700, marginBottom: '1rem' } }, 'All Candidates (' + candidates.length + ')'),
+        candidates.length === 0 ? h('p', { className: 'empty-msg' }, 'No candidates yet. Add one above.') :
+        h('table', null,
+          h('thead', null, h('tr', null, ['Candidate', 'Party', 'Votes', 'Status', 'Actions'].map(col => h('th', { key: col }, col)))),
+          h('tbody', null,
+            candidates.map(c => h('tr', { key: c.id },
+              h('td', null, h('div', { className: 'tc' }, h(Avatar, { name: c.name, imageUrl: c.image_url, size: 'sm' }), c.name)),
+              h('td', null, c.party),
+              h('td', null, h('strong', null, c.vote_count)),
+              h('td', null, h('span', { className: 'badge ' + (c.is_active ? 'badge-green' : 'badge-red') }, c.is_active ? 'Active' : 'Inactive')),
+              h('td', null, h('div', { className: 'abtns' },
+                h('button', { className: 'btn btn-outline btn-xs', onClick: () => startEdit(c) }, 'Edit'),
+                h('button', { className: 'btn btn-xs', style: { background: c.is_active ? '#fef3c7' : '#dcfce7', color: c.is_active ? '#92400e' : '#166534', cursor: 'pointer' }, onClick: () => toggleActive(c) }, c.is_active ? 'Deactivate' : 'Activate'),
+                h('button', { className: 'btn btn-danger btn-xs', onClick: () => delCand(c.id) }, 'Delete')
+              ))
+            ))
+          )
+        )
+      )
+    ),
+
+    tab === 'users' && h('div', { className: 'card' },
+      h('h3', { style: { fontWeight: 700, marginBottom: '1rem' } }, 'Registered Voters'),
+      users.length === 0 ? h('p', { className: 'empty-msg' }, 'No voters yet.') :
+      h('table', null,
+        h('thead', null, h('tr', null, ['#', 'Username', 'Email', 'Voted', 'Registered'].map(col => h('th', { key: col }, col)))),
+        h('tbody', null,
+          users.map((u, i) => h('tr', { key: u.id },
+            h('td', null, i + 1), h('td', null, u.username), h('td', null, u.email),
+            h('td', null, h('span', { className: 'badge ' + (u.has_voted ? 'badge-green' : 'badge-blue') }, u.has_voted ? '✅ Voted' : 'Not yet')),
+            h('td', null, new Date(u.created_at).toLocaleDateString())
+          ))
+        )
+      )
+    )
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────────────────────
+function App() {
+  const { user, loading } = useAuth();
+  const path = useHash();
+
+  if (loading) return h(Fragment, null, h(Navbar), h(Spinner));
+
+  const pub = ['/login', '/register'].includes(path);
+  if (!user && !pub) { setHash('/login'); return null; }
+  if (user && pub) { setHash(user.is_admin ? '/admin' : '/vote'); return null; }
+  if (path === '/admin' && user && !user.is_admin) { setHash('/vote'); return null; }
+  if (path === '/' || path === '') { setHash(user ? (user.is_admin ? '/admin' : '/vote') : '/login'); return null; }
+
+  const pages = { '/login': LoginPage, '/register': RegisterPage, '/vote': VotePage, '/results': ResultsPage, '/admin': AdminPage };
+  const Page = pages[path] || (() => h('div', { className: 'page' }, h(Alert, { type: 'info', msg: 'Page not found.' })));
+
+  return h(Fragment, null, h(Navbar), h(Page));
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(h(AuthProvider, null, h(App)));
+</script>
+</body>
+</html>
